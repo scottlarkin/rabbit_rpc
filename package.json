@@ -91,11 +91,14 @@
   "bundleDependencies": false,
   "dependencies": {
     "amqplib": "^0.5.1",
-    "death": "^1.1.0",
-    "gensync-cb": "^1.0.0"
+    "death": "^1.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/scottlarkin/rabbit_rpc"
   },
   "deprecated": false,
-  "description": "AMQP wrapper to amke it easy to communicate between NodeJS microservices using RabbitMQ",
+  "description": "AMQP wrapper to make it easy to communicate between NodeJS microservices using RabbitMQ",
   "devDependencies": {},
   "directories": {},
   "dist": {
@@ -125,5 +128,5 @@
     "start": "node rabbit.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "2.1.5"
+  "version": "3.0.5"
 }

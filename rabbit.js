@@ -114,17 +114,17 @@ PERFORMANCE OF THIS SOFTWARE.
         });
     });
 
-
-
     let getQueue = (broker, id, callback) => {
 
-        broker[channel].assertQueue(`${STREAM_QUEUE_PREFIX}${id}`, {}, (err, q) => {
+        broker[request](() => {
+            broker[channel].assertQueue(`${STREAM_QUEUE_PREFIX}${id}`, {}, (err, q) => {
 
-            if (err) {
-                throw new Error(ERROR_CAN_NOT_ASSERT_QUEUE);
-            }
+                if (err) {
+                    throw new Error(ERROR_CAN_NOT_ASSERT_QUEUE);
+                }
 
-            callback(err, q);
+                callback(err, q);
+            });
         });
 
     };
@@ -145,9 +145,9 @@ PERFORMANCE OF THIS SOFTWARE.
             getQueue(this.broker, this.id, (err, q) => {
 
                 this.broker[channel].consume(q.queue, msg => {
-                    
-                    if(!msg) return;
-                    
+
+                    if (!msg) return;
+
                     let content = toRaw(msg.content.toString());
 
                     //content will be null if the stream has finished reading
@@ -286,16 +286,12 @@ PERFORMANCE OF THIS SOFTWARE.
 
         createWriteStream(id, options, callback) {
 
-            this[request](() => {
-                callback(null, new WriteStream(id, this, options));
-            });
-
+            return new WriteStream(id, this, options);
         }
 
         createReadStream(id, options, callback) {
-            this[request](() => {
-                callback(null, new ReadStream(id, this, options));
-            });
+
+            return new ReadStream(id, this, options);
         }
 
         close() {

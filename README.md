@@ -115,21 +115,28 @@ const fs = require('fs'),
 
 let broker = new Rabbit();
 
+function guid() {
+    let s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
 //Set up an RPC response which will allow the client to request a file stream
-broker.rpcResponse('fsStreamRead', (filePath, id, callback) => {
+broker.rpcResponse('fsStreamRead', (filePath, callback) => {
+
+    //get a uniqie id, this will be used to link a read anda write stream to the same AMQP queue
+    let uniqueId = guid();
 
     //get a file read stream using fs module, passing the path of the file to read
     let fileRead = fs.createReadStream(filePath);
 
-    //call the broker function "createWriteStream", passing a uniqueid (from the client), and a callback
-    broker.createWriteStream(id, {}, (error, writeStream) => {
+    //call the broker function "createWriteStream", passing a unique id. returns a writable stream.
+    let writeStream = broker.createWriteStream(uniqueId, {});
 
-        //pipe the contents of the file to the writableStream from the broker
-        fileRead.pipe(writeStream); 
+    //pipe the contents of the file to the writableStream from the broker
+    fileRead.pipe(writeStream);
 
-        //call the rpc callback
-        callback(error, id);
-    });
+    //call the rpc callback
+    callback(null, uniqueId);
 });
 ```  
   
@@ -140,32 +147,24 @@ const fs = require('fs'),
 
 let broker = new Rabbit();
 
-function guid() {
-    let s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-}
-
 //Request a file stream from the server, passing a unique request ID and the path to the file
-broker.rpcRequest('fsStreamRead', './someImage.jpg', guid(), (error, guid) => {
+broker.rpcRequest('fsStreamRead', './img.jpg', (error, uniqueId) => {
 
     //Note that the path requested is the path to the file on the server machine.
 
     //create a file write stream with fs module
     //the path below is where the file will be saved on the client machine
-    let fileWrite = fs.createWriteStream('./someImage.jpg');
+    let fileWrite = fs.createWriteStream('./img.jpg');
 
-    //request a read stream from the server, passing the uniqie id.
-    broker.createReadStream(guid, {}, (error, readStream) => {
+    //get a readable stream from the broker. pass the unique id returrned from the RPC request.
+    let readStream = broker.createReadStream(uniqueId, {})
 
-        readStream.on('end', () => {
-            console.log('finished reading file from server');
-        });
-
-        //pipe the contents of the returned stream to the file write stream.
-        readStream.pipe(fileWrite);
+    readStream.on('end', () => {
+        console.log('finished reading file from server');
     });
 
+    //pipe the contents of the returned stream to the file write stream.
+    readStream.pipe(fileWrite);
 });
-
 ```
 
